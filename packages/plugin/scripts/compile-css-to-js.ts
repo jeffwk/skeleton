@@ -9,6 +9,18 @@ import { corePlugin } from '../src/tailwind/core.js';
 // tailwind needs to fix their exports :]
 const tailwindcss = tw as unknown as PluginCreator<string | Config | { config: string | Config }>;
 
+// Minimal transpile of local CSS to JS so it can be packaged
+export async function transpileCssInitial(cssEntryPath: string) {
+	const css = readFileSync(cssEntryPath, 'utf8');
+	const result = await postcss([postcssImport()]).process(css, { from: cssEntryPath });
+	if (result.root.type === 'document') throw Error('This should never happen');
+
+	return {
+		css: result.css,
+		cssInJs: postcssJs.objectify(result.root)
+	};
+}
+
 // Transpiles all of our library's CSS to JS
 export async function transpileCssToJs(cssEntryPath: string, plugins: Config['plugins'] = []) {
 	const selectors: string[] = [];

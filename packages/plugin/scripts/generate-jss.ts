@@ -1,17 +1,12 @@
-import type { CssInJs } from 'postcss-js';
-import { transpileCssToJs } from './compile-css-to-js.js';
+import { transpileCssToJs, transpileCssInitial } from './compile-css-to-js.js';
+import { patchMediaQueries } from '../src/tailwind/core.js';
 import { mkdir, writeFile } from 'fs/promises';
 import plugin from 'tailwindcss/plugin.js';
 
 const INTELLISENSE_FILE_NAME = 'generated-classes.js';
 const GENERATED_DIR_PATH = `./src/tailwind/generated`;
 
-async function exec() {
-	// Makes directory that stores our generated CSS-in-JS
-	await mkdir(GENERATED_DIR_PATH).catch(() => {
-		// directory already exists
-	});
-
+async function writeStaticFile() {
 	const generatedComponentJSS = await transpileCssToJs('./src/styles/components.css');
 	const componentClasses = patchMediaQueries(generatedComponentJSS);
 
@@ -27,22 +22,24 @@ async function exec() {
 	).catch((e) => console.error(e));
 }
 
-// Moves all of the media queries towards the end of the cssInJs object.
-function patchMediaQueries(cssInJs: CssInJs) {
-	const mediaQueries: CssInJs = {};
+async function writeInitialFile() {
+	const components = await transpileCssInitial('./src/styles/components.css');
+	const base = await transpileCssInitial('./src/styles/base.css');
 
-	for (const key of Object.keys(cssInJs)) {
-		if (key.startsWith('@media')) {
-			mediaQueries[key] = cssInJs[key];
-			delete cssInJs[key];
-		}
-	}
+	await writeFile(
+		`${GENERATED_DIR_PATH}/generated-initial.js`,
+		`module.exports = { components: ${JSON.stringify(components)}, base: ${JSON.stringify(base)} };`
+	).catch((e) => console.error(e));
+}
 
-	for (const key of Object.keys(mediaQueries)) {
-		cssInJs[key] = mediaQueries[key];
-	}
+async function exec() {
+	// Makes directory that stores our generated CSS-in-JS
+	await mkdir(GENERATED_DIR_PATH).catch(() => {
+		// directory already exists
+	});
 
-	return cssInJs;
+	await writeStaticFile();
+	await writeInitialFile();
 }
 
 exec();

@@ -27,6 +27,10 @@ export type ConfigOptions = {
 	 * Theme config for configuring your themes.
 	 */
 	themes?: ThemeConfig;
+	/**
+	 * If true, generate CSS with user's theme config.
+	 */
+	dynamic?: boolean;
 };
 
 export type ThemeConfig = {
