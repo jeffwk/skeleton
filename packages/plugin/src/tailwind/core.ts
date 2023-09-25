@@ -108,7 +108,7 @@ async function transpileFromInitialCss(css: string, cssInJs: CssInJs, plugins: C
 		]
 	} satisfies Config;
 
-	const result = await postcss([postcssImport(), tailwindcss(twConfig)]).process(css, {});
+	const result = await postcss([postcssImport(), tailwindcss(twConfig)]).process(css, { from: undefined });
 	if (result.root.type === 'document') throw Error('This should never happen');
 
 	return postcssJs.objectify(result.root);
